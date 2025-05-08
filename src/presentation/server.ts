@@ -1,9 +1,11 @@
 // src/presentation/server.ts
 
 import express, { Request, Response, Router } from 'express';
+import cors from 'cors';
 import { Server as HttpServer } from 'http';
 import { WSNotificationServer } from './websocket/WebSocketServer';
 import { validateTokenMiddleware } from './middlewares/validateToken.middleware';
+import { envs } from '../config/envs';  // si quieres leer orígenes desde .env
 
 interface Options {
   port: number;
@@ -23,27 +25,44 @@ export class Server {
   }
 
   async start() {
-    // Middlewares para parsear JSON, urlencoded, etc.
+    // 1) CORS
+    // Si quieres permitir todos los orígenes:
+    this.app.use(
+      cors({
+        origin: [
+          'http://localhost:3005', // Ejemplo de desarrollo local
+          'https://quick-bite-seven-orpin.vercel.app', // Vercel
+        ],
+        // Si usas cookies/sesiones:
+        // credentials: true,
+      })
+    );
+    
+    // O bien restringir a ciertos dominios:
+    // const allowed = envs.ALLOWED_ORIGINS.split(',');
+    // this.app.use(cors({ origin: allowed, credentials: true }));
+
+    // 2) Parsers
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
 
+    // 3) Ruta raíz de prueba
     this.app.get('/', (_req, res) => {
       res.status(200).json({ message: 'API funcionando' });
     });
 
-    // *** Aquí montamos nuestro middleware de protección ***
-    // Esto hará que todos los endpoints (excepto /api/auth/...) requieran token
+    // 4) Middleware de validación de token
     this.app.use(validateTokenMiddleware);
 
-    // Routes
+    // 5) Rutas de la aplicación
     this.app.use(this.routes);
 
-    // Ping (opcional)
-    this.app.get('/', async (req: Request, res: Response) => {
+    // 6) Ping (opcional, mismo que más arriba)
+    this.app.get('/', async (_req: Request, res: Response) => {
       res.status(200).json({ message: 'API funcionando' });
     });
 
-    // Init HTTP server + WebSocket
+    // 7) Inicializar HTTP + WS
     this.serverListener = this.app.listen(this.port, () => {
       console.log(`Server running on port ${this.port}`);
       WSNotificationServer.initialize(this.serverListener as HttpServer);
