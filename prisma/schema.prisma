@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Category {
+  id        String    @id @db.Uuid
+  name      String
+  status    Boolean
+  updatedAt DateTime  @db.Date
+  createdAt DateTime  @db.Date
+  Product   Product[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Customer {
+  id        String   @id @db.Uuid
+  name      String
+  userName  String?  @db.VarChar(10)
+  age       Int      @db.SmallInt
+  address   String
+  phone     String   @db.VarChar(15)
+  email     String
+  status    Boolean
+  updatedAt DateTime @db.Date
+  createdAt DateTime @db.Date
+  image     String?
+  Order     Order[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Kit {
+  id                   String                 @id @db.Uuid
+  name                 String
+  status               Boolean
+  description          String
+  createdAt            DateTime               @db.Date
+  updatedAt            DateTime               @db.Date
+  image                String?
+  KitPrice             KitPrice[]
+  OrderDetail          OrderDetail[]
+  ProductKit           ProductKit[]
+  ProductPriceEspecial ProductPriceEspecial[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model KitPrice {
+  id        String   @id @db.Uuid
+  price     Float
+  kitId     String   @db.Uuid
+  status    Boolean
+  createdAt DateTime @db.Date
+  updatedAt DateTime @db.Date
+  Kit       Kit      @relation(fields: [kitId], references: [id], onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Order {
+  id          String        @id @db.Uuid
+  customerId  String        @db.Uuid
+  retaurantId String        @db.Uuid
+  orderDate   DateTime      @db.Timestamp(6)
+  totalPrice  Float
+  status      String        @db.VarChar(20)
+  createdAt   DateTime      @db.Date
+  updatedAt   DateTime      @db.Date
+  Customer    Customer      @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Restaurant  Restaurant    @relation(fields: [retaurantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  OrderDetail OrderDetail[]
+
+  @@index([customerId, retaurantId], map: "Order_index_0")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model OrderDetail {
+  id                     String                @id @db.Uuid
+  orderId                String                @db.Uuid
+  productId              String                @db.Uuid
+  productPriceEspecialId String?               @db.Uuid
+  kitId                  String?               @db.Uuid
+  quantity               Int                   @db.SmallInt
+  createdAt              DateTime              @db.Date
+  updatedAt              DateTime              @db.Date
+  Kit                    Kit?                  @relation(fields: [kitId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Order                  Order                 @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Product                Product               @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ProductPriceEspecial   ProductPriceEspecial? @relation(fields: [productPriceEspecialId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([orderId, productId, productPriceEspecialId, kitId], map: "OrderDetail_index_0")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Product {
+  id                   String                 @id @db.Uuid
+  name                 String
+  categoryId           String                 @db.Uuid
+  description          String
+  status               Boolean
+  createdAt            DateTime               @db.Date
+  updatedAt            DateTime               @db.Date
+  image                String?
+  OrderDetail          OrderDetail[]
+  Category             Category               @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
+  ProductKit           ProductKit[]
+  ProductPrice         ProductPrice[]
+  ProductPriceEspecial ProductPriceEspecial[]
+
+  @@index([categoryId], map: "Product_index_0")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ProductKit {
+  productId String  @db.Uuid
+  kitId     String  @db.Uuid
+  quantity  Int     @db.SmallInt
+  Kit       Kit     @relation(fields: [kitId], references: [id], onUpdate: NoAction)
+  Product   Product @relation(fields: [productId], references: [id], onUpdate: NoAction)
+
+  @@id([productId, kitId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ProductPrice {
+  id        String   @id @db.Uuid
+  price     Float
+  productId String   @db.Uuid
+  status    Boolean
+  createdAt DateTime @db.Date
+  updatedAt DateTime @db.Date
+  Product   Product  @relation(fields: [productId], references: [id], onUpdate: NoAction)
+
+  @@index([productId], map: "ProductPrice_index_0")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ProductPriceEspecial {
+  id          String        @id @db.Uuid
+  price       Float
+  status      Boolean
+  productId   String        @db.Uuid
+  kitId       String        @db.Uuid
+  updatedAt   DateTime      @db.Date
+  createdAt   DateTime      @db.Date
+  OrderDetail OrderDetail[]
+  Kit         Kit           @relation(fields: [kitId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Product     Product       @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([productId], map: "ProductPriceEspecial_index_0")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Restaurant {
+  id        String   @id @db.Uuid
+  name      String
+  resId     String   @db.VarChar(10)
+  address   String
+  status    Boolean
+  updatedAt DateTime @db.Date
+  createdAt DateTime @db.Date
+  password  String
+  image     String?
+  Order     Order[]
+  Shift     Shift[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Shift {
+  id           String     @id @db.Uuid
+  restaurantId String     @db.Uuid
+  openShift    DateTime   @db.Timestamp(6)
+  closeShift   DateTime?  @db.Timestamp(6)
+  Restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onUpdate: NoAction)
+
+  @@index([restaurantId], map: "Shift_index_0")
+}
