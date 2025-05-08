@@ -27,6 +27,10 @@ export class Server {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
 
+    this.app.get('/', (_req, res) => {
+      res.status(200).json({ message: 'API funcionando' });
+    });
+
     // *** Aquí montamos nuestro middleware de protección ***
     // Esto hará que todos los endpoints (excepto /api/auth/...) requieran token
     this.app.use(validateTokenMiddleware);
