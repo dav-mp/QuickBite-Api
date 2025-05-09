@@ -30,7 +30,6 @@ export class Server {
     this.app.use(
       cors({
         origin: [
-          'http://localhost:3005', // Ejemplo de desarrollo local
           'https://quick-bite-seven-orpin.vercel.app', // Vercel
         ],
         // Si usas cookies/sesiones:
